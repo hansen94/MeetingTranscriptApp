@@ -1,5 +1,9 @@
-{
-  "expo": {
+
+import { ExpoConfig } from "expo/config";
+
+
+module.exports = ({ config }: { config: ExpoConfig }) => {
+  return {
     "name": "MeetingTranscriptApp",
     "slug": "MeetingTranscriptApp",
     "version": "1.0.0",
@@ -43,11 +47,12 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      // ["./plugins/withPlugin.ts"]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     }
-  }
-}
+  };
+};
