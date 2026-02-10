@@ -1,7 +1,5 @@
-import withAndroidPlugin from './withAndroidPlugin';
-import withIosPlugin from './withIosPlugin';
-
-// const { ConfigPlugin } = ConfigPlugins;
+const withAndroidPlugin = require('./withAndroidPlugin');
+const withIosPlugin = require('./withIosPlugin');
 
 const withPlugin = config => {
   // Apply Android modifications first
@@ -10,4 +8,4 @@ const withPlugin = config => {
   return withIosPlugin(config);
 };
 
-export default withPlugin;
+module.exports = withPlugin;

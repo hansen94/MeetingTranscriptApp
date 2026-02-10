@@ -1,6 +1,4 @@
-import configPlugins from 'expo/config-plugins.js';
-
-const { withInfoPlist } = configPlugins;
+const { withInfoPlist } = require('expo/config-plugins');
 
 const withIosPlugin = config => {
   // Define the custom message
@@ -13,4 +11,4 @@ const withIosPlugin = config => {
   });
 };
 
-export default withIosPlugin;
+module.exports = withIosPlugin;

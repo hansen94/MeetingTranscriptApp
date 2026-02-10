@@ -1,6 +1,4 @@
-import configPlugins from 'expo/config-plugins.js';
-
-const { withAndroidManifest } = configPlugins;
+const { withAndroidManifest } = require('expo/config-plugins');
 
 const withAndroidPlugin = config => {
   // Define a custom message
@@ -28,4 +26,4 @@ const withAndroidPlugin = config => {
   });
 };
 
-export default withAndroidPlugin;
+module.exports = withAndroidPlugin;

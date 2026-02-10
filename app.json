@@ -1,9 +1,5 @@
-
-import { ExpoConfig } from "expo/config";
-
-
-module.exports = ({ config }: { config: ExpoConfig }) => {
-  return {
+{
+  "expo": {
     "name": "MeetingTranscriptApp",
     "slug": "MeetingTranscriptApp",
     "version": "1.0.0",
@@ -16,9 +12,11 @@ module.exports = ({ config }: { config: ExpoConfig }) => {
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
+          "audio",
           "audio"
         ]
-      }
+      },
+      "bundleIdentifier": "com.hansen-t-d.MeetingTranscriptApp"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +26,8 @@ module.exports = ({ config }: { config: ExpoConfig }) => {
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hansen_t_d.MeetingTranscriptApp"
     },
     "web": {
       "output": "static",
@@ -48,11 +47,13 @@ module.exports = ({ config }: { config: ExpoConfig }) => {
           }
         }
       ],
-      // ["./plugins/withPlugin.ts"]
+      [
+        "./plugins/withPlugin.js"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     }
-  };
-};
+  }
+}
