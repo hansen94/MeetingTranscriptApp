@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
@@ -11,6 +12,23 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Setup listener for notification taps to handle deep linking
+export function setupNotificationListeners() {
+  // Handle notification tap when app is in background/quit
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = response.notification.request.content.data;
+    
+    // Check if notification has meeting_id for deep linking
+    if (data.meeting_id) {
+      console.log('Navigating to meeting:', data.meeting_id);
+      // Navigate to the meeting detail screen
+      router.push(`/meeting/${data.meeting_id}`);
+    }
+  });
+
+  return subscription;
+}
 
 function handleRegistrationError(errorMessage: string) {
   alert(errorMessage);
