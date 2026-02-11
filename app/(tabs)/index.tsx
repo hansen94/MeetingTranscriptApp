@@ -35,6 +35,7 @@ const HomeScreen = () => {
       // Set up audio mode for recording and background playback
       await setAudioModeAsync({
         allowsRecording: true,
+        allowsBackgroundRecording: true,
         playsInSilentMode: true,
         shouldPlayInBackground: true,
       });
