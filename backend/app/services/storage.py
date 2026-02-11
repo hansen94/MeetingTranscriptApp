@@ -5,15 +5,14 @@ from app.services.database import get_supabase_admin_client
 import asyncio
 from datetime import datetime
 import logging
-import openai
+from openai import OpenAI
 import os
 import tempfile
 
 logger = logging.getLogger(__name__)
 
-# Configure OpenAI
-# openai.api_key = os.getenv("OPENAI_API_KEY")
-openai.api_key = settings.openai_api_key
+# Configure OpenAI client
+client = OpenAI(api_key=settings.openai_api_key)
 
 
 async def upload_recording(file: UploadFile, filename: str) -> tuple[str, bytes]:
@@ -85,23 +84,48 @@ async def process_recording(recording_id: str, file_content: bytes = None, filen
                 logger.info(f"Transcribing with OpenAI Whisper: {temp_file_path}")
                 with open(temp_file_path, "rb") as audio_file:
                     transcript_response = await asyncio.to_thread(
-                        openai.Audio.transcribe,
+                        client.audio.transcriptions.create,
                         model="whisper-1",
                         file=audio_file
                     )
                 
-                transcript_text = transcript_response.get("text", "")
+                transcript_text = transcript_response.text
                 
                 if not transcript_text:
                     raise Exception("OpenAI returned empty transcript")
                 
                 logger.info(f"Transcription completed for recording {recording_id}")
                 
-                # Update database with transcript
+                # Generate summary using GPT-4
+                logger.info(f"Generating summary with GPT-4 for recording {recording_id}")
+                summary_response = await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model="gpt-4",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a helpful assistant that summarizes meeting transcripts. Provide a concise summary of the key points discussed in no more than one paragraph."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Please summarize the following transcript:\n\n{transcript_text}"
+                        }
+                    ]
+                )
+                
+                summary_text = summary_response.choices[0].message.content
+                
+                if not summary_text:
+                    raise Exception("OpenAI returned empty summary")
+                
+                logger.info(f"Summary generation completed for recording {recording_id}")
+                
+                # Update database with transcript and summary
                 processed_data = {
                     "status": "processed",
                     "processed_at": datetime.utcnow().isoformat(),
-                    "transcript": transcript_text
+                    "transcript": transcript_text,
+                    "summary": summary_text
                 }
                 
                 result = supabase.table("recordings").update(processed_data).eq("id", recording_id).execute()

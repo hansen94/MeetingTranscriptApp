@@ -83,7 +83,7 @@ const HomeScreen = () => {
       await audioRecorder.stop();
 
       if (audioRecorder.uri) {
-        const fileName = `recording_${recordingStartTime}.mp4`;
+        const fileName = `recording_${recordingStartTime}.m4a`;
         const destinationFile = new File(Paths.document, fileName);
         const sourceFile = new File(audioRecorder.uri);
 

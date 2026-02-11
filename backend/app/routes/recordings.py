@@ -28,7 +28,7 @@ async def upload_recording_file(
         
         # Generate unique filename
         file_id = str(uuid.uuid4())
-        file_extension = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'mp4'
+        file_extension = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'm4a'
         unique_filename = f"{file_id}.{file_extension}"
 
         print("unique filename: " + unique_filename)

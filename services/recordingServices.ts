@@ -42,7 +42,7 @@ export const uploadRecording = async (fileUri: string, filename: string) => {
   formData.append('file', {
     uri: fileUri,
     name: filename,
-    type: 'video/mp4'
+    type: 'audio/m4a'
   } as any);
   
   const request = {
