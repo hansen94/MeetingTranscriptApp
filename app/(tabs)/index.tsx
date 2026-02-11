@@ -1,3 +1,4 @@
+import { registerForPushNotificationsAsync } from "@/services/notificationServices";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -23,6 +24,7 @@ const HomeScreen = () => {
 
   useEffect(() => {
     setupAudioAndPermissions();
+    registerForPushNotificationsAsync()
   }, []);
 
   const setupAudioAndPermissions = async () => {
