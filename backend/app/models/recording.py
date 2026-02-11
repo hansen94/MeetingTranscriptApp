@@ -24,3 +24,4 @@ class RecordingStatus(BaseModel):
     recording_id: str
     status: str
     message: str
+    storage_path: str

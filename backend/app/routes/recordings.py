@@ -5,6 +5,9 @@ from app.services.storage import upload_recording, process_recording
 from app.models.recording import RecordingResponse, RecordingStatus
 import uuid
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/recordings", tags=["recordings"])
 
@@ -27,9 +30,13 @@ async def upload_recording_file(
         file_id = str(uuid.uuid4())
         file_extension = file.filename.split('.')[-1] if file.filename and '.' in file.filename else 'mp4'
         unique_filename = f"{file_id}.{file_extension}"
+
+        print("unique filename: " + unique_filename)
         
         # Upload to Supabase Storage
         storage_path = await upload_recording(file, unique_filename)
+
+        print("successfully stored. storage_path: " + storage_path)
         
         # Save metadata to database
         supabase = get_supabase_client()
@@ -41,8 +48,12 @@ async def upload_recording_file(
             "status": "uploaded",
             "file_size": file.size or 0
         }
+
+        logger.debug(f"recording_data: {str(recording_data)}")
         
         result = supabase.table("recordings").insert(recording_data).execute()
+
+        print("recording_data success : ")
         
         if result.data:
             # Queue background processing
@@ -51,7 +62,8 @@ async def upload_recording_file(
             return RecordingStatus(
                 recording_id=file_id,
                 status="processing",
-                message="Recording uploaded successfully and queued for processing"
+                message="Recording uploaded successfully and queued for processing",
+                storage_path=storage_path
             )
         else:
             raise HTTPException(status_code=500, detail="Failed to save recording metadata")

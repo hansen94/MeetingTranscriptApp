@@ -10,6 +10,7 @@ import {
 import { File, Paths } from "expo-file-system";
 import React, { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { uploadRecording } from "../../services/recordingServices";
 
 const HomeScreen = () => {
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -91,7 +92,22 @@ const HomeScreen = () => {
         setLastRecordingPath(destinationFile.uri);
 
         console.log(`Recording saved to: ${destinationFile.uri}`);
-        Alert.alert("Recording Saved", `Recording saved as ${fileName}`);
+
+        // Upload the recording to the backend
+        try {
+          const uploadResult = await uploadRecording(destinationFile.uri, fileName);
+          console.log('Upload successful:', uploadResult);
+          Alert.alert(
+            "Recording Uploaded",
+            `Recording saved as ${fileName} and uploaded successfully.\nRecording ID: ${uploadResult.recording_id}`
+          );
+        } catch (uploadError) {
+          console.error('Upload failed:', uploadError);
+          Alert.alert(
+            "Upload Failed",
+            `Recording saved as ${fileName} but upload failed. Please try again later.`
+          );
+        }
       } else {
         console.log("No recording URI available");
         Alert.alert("Recording Error", "No recording was created.");
