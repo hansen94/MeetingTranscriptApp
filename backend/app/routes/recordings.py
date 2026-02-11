@@ -34,7 +34,7 @@ async def upload_recording_file(
         print("unique filename: " + unique_filename)
         
         # Upload to Supabase Storage
-        storage_path = await upload_recording(file, unique_filename)
+        storage_path, file_content = await upload_recording(file, unique_filename)
 
         print("successfully stored. storage_path: " + storage_path)
         
@@ -56,8 +56,8 @@ async def upload_recording_file(
         print("recording_data success : ")
         
         if result.data:
-            # Queue background processing
-            background_tasks.add_task(process_recording, file_id) # TODO implement process_recording
+            # Queue background processing with file content to avoid re-downloading
+            background_tasks.add_task(process_recording, file_id, file_content, unique_filename)
             
             return RecordingStatus(
                 recording_id=file_id,
