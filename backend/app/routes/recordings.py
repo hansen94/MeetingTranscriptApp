@@ -1,5 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
-from typing import List
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
+from typing import List, Optional
 from app.services.database import get_supabase_client
 from app.services.storage import upload_recording, process_recording
 from app.models.recording import RecordingResponse, RecordingStatus
@@ -15,7 +15,8 @@ router = APIRouter(prefix="/recordings", tags=["recordings"])
 @router.post("/upload", response_model=RecordingStatus)
 async def upload_recording_file(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    pushToken: str = Form(...)
 ):
     """Upload a recording file to storage and queue for processing"""
     try:
@@ -32,6 +33,7 @@ async def upload_recording_file(
         unique_filename = f"{file_id}.{file_extension}"
 
         print("unique filename: " + unique_filename)
+        logger.debug(f"pushToken: {str(pushToken)}")
         
         # Upload to Supabase Storage
         storage_path, file_content = await upload_recording(file, unique_filename)
@@ -57,7 +59,7 @@ async def upload_recording_file(
         
         if result.data:
             # Queue background processing with file content to avoid re-downloading
-            background_tasks.add_task(process_recording, file_id, file_content, unique_filename)
+            background_tasks.add_task(process_recording, file_id, file_content, unique_filename, pushToken)
             
             return RecordingStatus(
                 recording_id=file_id,

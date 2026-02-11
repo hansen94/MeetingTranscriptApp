@@ -8,6 +8,13 @@ import logging
 from openai import OpenAI
 import os
 import tempfile
+from exponent_server_sdk import (
+    DeviceNotRegisteredError,
+    PushClient,
+    PushMessage,
+    PushServerError,
+    PushTicketError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +47,7 @@ async def upload_recording(file: UploadFile, filename: str) -> tuple[str, bytes]
         raise Exception(f"Upload failed: {str(e)}")
 
 
-async def process_recording(recording_id: str, file_content: bytes = None, filename: str = None):
+async def process_recording(recording_id: str, file_content: bytes = None, filename: str = None, pushToken: str = None):
     """Background task to process the recording with OpenAI Whisper"""
     max_retries = 1
     retry_count = 0
@@ -132,6 +139,31 @@ async def process_recording(recording_id: str, file_content: bytes = None, filen
                 
                 if result.data:
                     logger.info(f"Successfully processed recording {recording_id}")
+                    
+                    # Send push notification if pushToken is provided
+                    if pushToken:
+                        try:
+                            logger.info(f"Sending push notification to {pushToken}")
+                            response = PushClient().publish(
+                                PushMessage(
+                                    to=pushToken,
+                                    title="Meeting Processed Successfully",
+                                    body="Tap to see you meeting's transcript and summary",
+                                    data={"meeting_id": recording_id}
+                                )
+                            )
+                            # Validate the response
+                            response.validate_response()
+                            logger.info(f"Push notification sent successfully for recording {recording_id}")
+                        except DeviceNotRegisteredError:
+                            logger.warning(f"Push token {pushToken} is no longer registered")
+                        except PushTicketError as exc:
+                            logger.error(f"Push notification error for recording {recording_id}: {exc.push_response._asdict()}")
+                        except PushServerError as exc:
+                            logger.error(f"Push server error for recording {recording_id}: {exc.errors}")
+                        except Exception as exc:
+                            logger.error(f"Failed to send push notification for recording {recording_id}: {str(exc)}")
+                    
                     return  # Success, exit function
                 else:
                     raise Exception("Failed to update recording with transcript")

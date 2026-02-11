@@ -1,7 +1,12 @@
+import { isDevice } from "expo-device";
 import { Platform } from "react-native";
 
 
-const BASEURL = Platform.OS === 'android' ? process.env.EXPO_PUBLIC_ANDROID_LOCAL_API_URL : process.env.EXPO_PUBLIC_IOS_LOCAL_API_URL;
+const BASEURL = Platform.OS === 'android' && isDevice 
+  ? process.env.EXPO_PUBLIC_ANDROID_DEVICE_LOCAL_API_URL 
+  : Platform.OS === 'android' 
+    ? process.env.EXPO_PUBLIC_ANDROID_LOCAL_API_URL 
+    : process.env.EXPO_PUBLIC_IOS_LOCAL_API_URL;
 
 const defaultErrorHandler = (error) => {
   console.error(error);
@@ -34,7 +39,7 @@ const getJSONContent = async (response) => {
   }
 }
 
-export const uploadRecording = async (fileUri: string, filename: string) => {
+export const uploadRecording = async (fileUri: string, filename: string, pushToken: string | null) => {
   const uri = `${BASEURL}/recordings/upload`;
   
   // Create form data
@@ -44,6 +49,10 @@ export const uploadRecording = async (fileUri: string, filename: string) => {
     name: filename,
     type: 'audio/m4a'
   } as any);
+  
+  if (pushToken) {
+    formData.append('pushToken', pushToken);
+  }
   
   const request = {
     method: 'POST',

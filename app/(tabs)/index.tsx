@@ -21,10 +21,15 @@ const HomeScreen = () => {
   const [recordingStartTime, setRecordingStartTime] = useState<string>("");
   const [lastRecordingPath, setLastRecordingPath] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [pushToken, setPushToken] = useState<string | null>(null);
 
   useEffect(() => {
     setupAudioAndPermissions();
-    registerForPushNotificationsAsync()
+    registerForPushNotificationsAsync().then((token) => {
+      if (token) {
+        setPushToken(token);
+      }
+    });
   }, []);
 
   const setupAudioAndPermissions = async () => {
@@ -99,7 +104,7 @@ const HomeScreen = () => {
         // Upload the recording to the backend
         try {
           setIsUploading(true);
-          const uploadResult = await uploadRecording(destinationFile.uri, fileName);
+          const uploadResult = await uploadRecording(destinationFile.uri, fileName, pushToken);
           console.log('Upload successful:', uploadResult);
           Alert.alert(
             "Recording Uploaded",
