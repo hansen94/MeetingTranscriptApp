@@ -9,7 +9,7 @@ import {
 } from "expo-audio";
 import { File, Paths } from "expo-file-system";
 import React, { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { uploadRecording } from "../../services/recordingServices";
 
 const HomeScreen = () => {
@@ -19,6 +19,7 @@ const HomeScreen = () => {
   const playerState = useAudioPlayerStatus(audioPlayer);
   const [recordingStartTime, setRecordingStartTime] = useState<string>("");
   const [lastRecordingPath, setLastRecordingPath] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setupAudioAndPermissions();
@@ -95,6 +96,7 @@ const HomeScreen = () => {
 
         // Upload the recording to the backend
         try {
+          setIsUploading(true);
           const uploadResult = await uploadRecording(destinationFile.uri, fileName);
           console.log('Upload successful:', uploadResult);
           Alert.alert(
@@ -107,6 +109,8 @@ const HomeScreen = () => {
             "Upload Failed",
             `Recording saved as ${fileName} but upload failed. Please try again later.`
           );
+        } finally {
+          setIsUploading(false);
         }
       } else {
         console.log("No recording URI available");
@@ -119,7 +123,7 @@ const HomeScreen = () => {
   };
 
   const handleRecord = async () => {
-    if (recorderState.isRecording) {
+    if (recorderState.isRecording || isUploading) {
       await stopRecording();
     } else {
       await startRecording();
@@ -147,13 +151,21 @@ const HomeScreen = () => {
       <TouchableOpacity
         style={[
           styles.recordButton,
-          { backgroundColor: recorderState.isRecording ? '#22c55e' : '#ff4444' }
+          { backgroundColor: (recorderState.isRecording || isUploading) ? '#22c55e' : '#ff4444' }
         ]}
         onPress={handleRecord}
+        disabled={isUploading}
       >
-        <Text style={styles.recordText}>
-          {recorderState.isRecording ? 'Recording...' : 'Record'}
-        </Text>
+        {isUploading ? (
+          <>
+            <ActivityIndicator size="large" color="white" style={styles.loadingIndicator} />
+            <Text style={styles.recordText}>Uploading...</Text>
+          </>
+        ) : (
+          <Text style={styles.recordText}>
+            {recorderState.isRecording ? 'Recording...' : 'Record'}
+          </Text>
+        )}
       </TouchableOpacity>
 
       <Pressable
@@ -199,6 +211,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  loadingIndicator: {
+    marginBottom: 10,
   },
   playButton: {
     position: 'absolute',

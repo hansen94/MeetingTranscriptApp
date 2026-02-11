@@ -77,7 +77,6 @@ export const uploadRecording = async (fileUri: string, filename: string) => {
 export const getRecordings = async () => {
   const uri = `${BASEURL}/recordings`;
   console.log(uri);
-  // const uri = 'https://www.google.com';
   const request = {
     method: 'GET',
   }
@@ -86,4 +85,15 @@ export const getRecordings = async () => {
 
   return respJson;
 
+}
+
+export const getRecordingsById = async (id) => {
+  const uri = `${BASEURL}/recordings/${id}`;
+  const request = {
+    method: 'GET',
+  }
+  const response = await fetch(uri, request).catch(defaultErrorHandler);
+  const respJson = await getJSONContent(response);
+
+  return respJson;
 }

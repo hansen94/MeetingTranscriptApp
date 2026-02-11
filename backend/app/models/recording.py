@@ -17,6 +17,7 @@ class RecordingResponse(BaseModel):
     status: str
     file_size: int
     transcript: Optional[str] = None
+    summary: Optional[str] = None
     created_at: datetime
 
 
