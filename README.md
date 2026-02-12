@@ -34,6 +34,7 @@
 1. Open terminal and cd to the backend folder inside the project folder
 2. Activate virtual environment for Python
    ```bash
+   python3 -m venv .venv
    source .venv/bin/activate
    ```
 3. Install dependencies
