@@ -4,3 +4,5 @@ supabase==2.27.3
 python-multipart==0.0.22
 python-dotenv==1.2.1
 httpx==0.28.1
+exponent_server_sdk==2.2.0
+openai==2.20.0

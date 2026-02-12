@@ -1,50 +1,154 @@
-# Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# How to run Mobile App
+## Requirement
+- Node.js 22
 
-## Get started
-
-1. Install dependencies
+## Get Started
+1. Open terminal and cd to the root folder of the project
+2. Install dependencies
 
    ```bash
    npm install
    ```
-
-2. Start the app
+3. Copy the .env for app into the root project folder and fill in your local ip address. Get your local ip with
+   ```bash
+   ifconfig | grep "inet "
+   ```
+   It should start with 192.168.1...
+4. Create a development build with eas and install it to an Android device
+   ```bash
+   eas build -p android --profile development
+   ```
+4. Start the app
 
    ```bash
    npx expo start
    ```
+5. To test the notification, please use a real device instead of a simulator. Press shift+a and select the Android device
 
-In the output, you'll find options to open the app in a
+# How to run Python Backend
+## Requirement
+- Python 3
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Get Started
+1. Open terminal and cd to the backend folder inside the project folder
+2. Activate virtual environment for Python
+   ```bash
+   source .venv/bin/activate
+   ```
+3. Install dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Copy the .env for backend into the backend folder
+5. Start the server
+   ```bash
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+# Architecture Decisions
 
-## Get a fresh project
+## Design Philosophy
+This application follows a client-server architecture with asynchronous processing to handle computationally expensive AI operations without blocking the user experience.
 
-When you're ready, run:
+## Component Architecture
 
-```bash
-npm run reset-project
-```
+### Mobile App (React Native)
+- **Responsibility**: Audio capture and user interface
+- **Recording Flow**: Records meeting audio and saves as a local file upon completion
+- **Upload Mechanism**: Sends audio file to Python backend via multipart/form-data HTTP upload
+- **Notification Handling**: Receives push notifications when processing completes
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Backend (Python/FastAPI)
+- **Responsibility**: File management, AI processing orchestration, and notifications
 
-## Learn more
+#### Storage Layer
+- Stores uploaded audio files in Supabase Storage for durability and accessibility
+- Creates corresponding metadata records in the `Recording` database table
 
-To learn more about developing your project with Expo, look at the following resources:
+#### Processing Pipeline
+The backend executes a sequential processing pipeline for each recording:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. **Transcription**: Retrieves audio from Supabase Storage and sends to OpenAI Whisper-1 model for speech-to-text conversion
+2. **Summarization**: Passes generated transcript to OpenAI GPT-4 model to create a concise meeting summary
+3. **Persistence**: Updates the `Recording` table with both transcript and summary
+4. **Notification**: Sends push notification to the client device with the `meeting_id` to signal completion
 
-## Join the community
+#### Error Handling Strategy
+- **Retry Logic**: Implements single retry on failure for any pipeline step
+- **Rationale**: Balances reliability with simplicity; prevents resource waste from infinite retries
+- **Trade-off**: Prioritizes atomic processing (all-or-nothing) over partial state recovery
 
-Join our community of developers creating universal apps.
+## Key Design Trade-offs
+- **Synchronous Pipeline**: Simpler error handling and state management, but longer processing time
+- **Single Retry**: Handles transient failures without complex retry logic or dead-letter queues
+- **Monolithic Processing**: Easier to reason about, but less flexible for independent step scaling
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Future Enhancements
+
+## Backend Improvements
+
+### 1. Modular Processing Pipeline with Task Queue
+**Current State**: Monolithic synchronous processing of transcription, summarization, and notification
+
+**Proposed Enhancement**:
+- Decompose pipeline into independent microservices or background tasks
+- Implement message queue (e.g., Celery, RQ, or AWS SQS) for asynchronous task execution
+- Add state machine to track processing stages (uploaded → transcribing → summarizing → completed)
+
+**Benefits**:
+- Parallel processing capabilities for improved throughput
+- Independent scaling of resource-intensive operations
+- Better fault isolation and granular retry logic
+- Ability to pause/resume long-running operations
+
+**Trade-offs**:
+- Increased architectural complexity
+- Need for distributed state management
+- More sophisticated error handling per stage
+
+## Mobile App Improvements
+
+### 2. Centralized State Management
+**Current State**: Component-level state management with prop drilling
+
+**Proposed Enhancement**:
+- Implement Redux Toolkit or Zustand for global state management
+- Create typed state slices for recordings, user preferences, and network status
+- Implement middleware for side effects (API calls, notifications)
+
+**Benefits**:
+- Predictable state updates and easier debugging
+- Better separation of concerns
+- Simplified component logic
+- Improved testability
+
+### 3. Enhanced User Experience
+**Current State**: Functional but minimal UI design
+
+**Proposed Enhancement**:
+- Design system implementation with consistent typography, spacing, and color palette
+- Add loading skeletons and optimistic UI updates
+- Implement smooth animations for state transitions
+- Add offline support with local caching
+- Improve accessibility (screen reader support, contrast ratios)
+
+**Benefits**:
+- Professional appearance and brand consistency
+- Reduced perceived latency
+- Better user engagement and retention
+- Compliance with accessibility standards
+
+## Infrastructure Improvements
+
+### 4. Monitoring and Observability
+- Add structured logging with correlation IDs
+- Implement application performance monitoring (APM)
+- Set up alerting for processing failures and API rate limits
+- Track key metrics (processing time, success rates, API costs)
+
+### 5. Security Enhancements
+- Implement user authentication and authorization
+- Add rate limiting to prevent abuse
+- Encrypt sensitive data at rest and in transit
+- Implement audio file access controls and expiration policies
